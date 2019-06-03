@@ -140,7 +140,10 @@ func main() {
 	gConfig.WebMode = 1
 
 	gPrivateKey = new(rsa.PrivateKey)
+	fmt.Printf("Global Config: %v\n", gConfig)
+	fmt.Printf("Private Key File Path: %v\n", gConfig.PrivateKeyPath)
 	err = LoadPrivateKey(gConfig.PrivateKeyPath, gPrivateKey)
+	fmt.Printf("Key Loading ERROR: %v\n", err)
 	if err != nil {
 		gPrivateKey = nil
 		log.Printf("Private key is not loaded, omitting : %v\n", gConfig.PrivateKeyPath)
@@ -560,7 +563,7 @@ func EnrollUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pkiWebContract, err := NewLuxUni_PKI_web(common.HexToAddress(gConfig.ContractWebHash), ethClient)
+	pkiWebContract, err := NewLuxUniPKIWeb(common.HexToAddress(gConfig.ContractWebHash), ethClient)
 	if err != nil {
 		log.Fatalf("Failed to instantiate a smart contract: %v", err)
 	}
@@ -583,7 +586,7 @@ func EnrollUser(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Failed to create authorized transactor: %v", err)
 	}
 
-	sess := &LuxUni_PKI_webSession{
+	sess := &LuxUniPKIWebSession{
 		Contract: pkiWebContract,
 		CallOpts: bind.CallOpts{
 			Pending: true,
@@ -591,7 +594,7 @@ func EnrollUser(w http.ResponseWriter, r *http.Request) {
 		TransactOpts: bind.TransactOpts{
 			From:     auth.From,
 			Signer:   auth.Signer,
-			GasLimit: big.NewInt(2000000),
+			GasLimit: uint64(2000000),
 		},
 	}
 	/*sess.TransactOpts = *auth
@@ -729,13 +732,13 @@ func PkiForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pkiContr, err := NewLuxUni_PKI(parentAddr, client)
+	pkiContr, err := NewLuxUniPKI(parentAddr, client)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to instantiate a smart contract: ", err),
 			http.StatusInternalServerError)
 		return
 	}
-	pkiWebContr, err := NewLuxUni_PKI_web(common.HexToAddress(gConfig.ContractWebHash), client)
+	pkiWebContr, err := NewLuxUniPKIWeb(common.HexToAddress(gConfig.ContractWebHash), client)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to instantiate a smart contract: ", err),
 			http.StatusInternalServerError)
@@ -845,7 +848,7 @@ func PkiForm(w http.ResponseWriter, r *http.Request) {
 		docPrez := CDocPrez{int(i), regDatum.FileName, parentAddr.String(),
 			strContrAddr, regDatum.EthAccCA.String(),
 			regDatum.Description, "", /* link */
-			"" /*decrypt*/, "0x" + hashStr /*[:10] + "..."*/, crDate,
+			""                        /*decrypt*/, "0x" + hashStr /*[:10] + "..."*/, crDate,
 			crDate.String(), isCA}
 
 		// formation of data for (presentation of) HTML forms
@@ -1110,7 +1113,7 @@ func CreateContract(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
 	}
 
-	pkiContr, err := NewLuxUni_PKI(common.HexToAddress(parentAddrStr), client)
+	pkiContr, err := NewLuxUniPKI(common.HexToAddress(parentAddrStr), client)
 	if err != nil {
 		http.Error(w, GeneralError{fmt.Sprintf(
 			"Failed to instantiate a smart contract: ", err)}.Error(),
@@ -1152,8 +1155,8 @@ func CreateContract(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Failed to create authorized transactor: %v", err)
 	}
 	var trOpts bind.TransactOpts = *auth
-	trOpts.GasLimit = big.NewInt(4000000) // 6124970 - block gas limit in Rinkeby
-	contrAddr, _ /*contr*/, _, err := DeployLuxUni_PKI(&trOpts, client)
+	trOpts.GasLimit = uint64(4000000) // 6124970 - block gas limit in Rinkeby
+	contrAddr, _ /*contr*/, _, err := DeployLuxUniPKI(&trOpts, client)
 	/*
 	   https://stackoverflow.com/questions/40096750/set-status-code-on-http-responsewriter
 	*/
@@ -1474,7 +1477,7 @@ func GenerateCert(contrAddr common.Address, parentAddr common.Address,
 	// see Certificate structure at
 	// http://golang.org/pkg/crypto/x509/#Certificate
 	template := &x509.Certificate{
-		IsCA: isCA,
+		IsCA:                  isCA,
 		BasicConstraintsValid: true,
 		SubjectKeyId:          []byte{1, 2, 3},
 		SerialNumber:          big.NewInt(1234),

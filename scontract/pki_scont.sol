@@ -1,8 +1,19 @@
 pragma solidity ^0.4.0;
 import "./owned.sol";
 
-
 contract LuxUni_PKI is owned {
+
+    mapping(bytes32 => uint)  certificateStatusMap;
+
+    mapping(bytes32 => bytes)  certificateValueMap;
+    function getCertificateValue(bytes32 certificateHash) constant returns(bytes) {
+        return certificateValueMap[certificateHash];
+    }
+
+    mapping (string => bytes32[]) domainNameCertificateHashMap;
+    function getDomainCertificateHashes(string domainName) constant returns( bytes32[]) {
+        return domainNameCertificateHashMap[domainName];
+    }
 
     bytes private caCertificate;
 
@@ -56,7 +67,6 @@ contract LuxUni_PKI is owned {
            throws if executed by not an owner
     */
     function newRegDatum(bytes32 _dataHash, bytes _algoHashID) onlyOwner returns(uint _regID) {
-
         _regID = regData.length++;
         RegDatum reg = regData[_regID];
         reg.dataHash = _dataHash;
@@ -65,6 +75,33 @@ contract LuxUni_PKI is owned {
         numRegData = _regID + 1;
 
         evLuxUni_NewRegDatumReturn(uint(_dataHash), _regID);
+
+        certificateStatusMap[_dataHash] = 1;
+
+        //Certificate Value or domain names could be received as parameter.
+        //And could be stored in smart contract
+       /*
+       bytes certificateValue;
+       certificateValueMap[_dataHash] = certificateValue ;
+       registerCertificateDomainNames(_dataHash,certificateValue);
+        */
+    }
+
+    function registerCertificateDomainNames(bytes32 certificateHash, bytes certificateValue) private {
+        string[] memory domainNames = parseCertificateDomainNames(certificateValue);
+        for (uint i=0; i<domainNames.length; i++) {
+            string memory domainName = domainNames[i];
+            domainNameCertificateHashMap[domainName].push(certificateHash);
+        }
+    }
+
+    string constant EXAMPLE_DOMAIN_NAME = "www.google.com";
+    function parseCertificateDomainNames(bytes certificateValue) private returns(string[]) {
+      /* Parses certificate for retrieving domains names */
+      /* Detailed implementation could be added  */
+      string[] certificateDomainNames;
+      certificateDomainNames[0] = EXAMPLE_DOMAIN_NAME;
+      return certificateDomainNames;
     }
 
     /* !! our black list is based on the white list.
@@ -80,6 +117,9 @@ contract LuxUni_PKI is owned {
             return 2;
         }
         deletedRegData[_regID] = DeletedRegDatum(msg.sender, now);
+
+        RegDatum existingCertificateDetails = regData[_regID];
+        certificateStatusMap[existingCertificateDetails.dataHash] = 0;
         return 0;
     }
 
@@ -118,7 +158,7 @@ contract LuxUni_PKI is owned {
     private constant returns(bool) {
         /* return ( (ixf <= jxs ) and (jxl <= ixl) ) or \
            ( (jxf <= ixs ) and (ixl <= jxl) ) */
-        /* return ( (_asnParent.iFirstContent <= _asnChild.iFirst ) || 
+        /* return ( (_asnParent.iFirstContent <= _asnChild.iFirst ) ||
             (_asnChild.iLastContent <= _asnParent.iLastContent) ); */
         if (_asnChild.iLastContent > _asnParent.iLastContent) {
             return false;
@@ -142,7 +182,7 @@ contract LuxUni_PKI is owned {
         'NULL':              0x05,        'OBJECT IDENTIFIER': 0x06,
         'SEQUENCE':          0x70,        'SET':               0x71,
         'PrintableString':   0x13,        'IA5String':         0x16,
-        'UTCTime':           0x17,        'ENUMERATED':        0x0A,    
+        'UTCTime':           0x17,        'ENUMERATED':        0x0A,
         'UTF8String':        0x0C,        'PrintableString':   0x13,
         }
         if asn1_type_table[asn1_type] != ord(der[ixs]):
@@ -384,9 +424,9 @@ contract LuxUni_PKI is owned {
         }
         /* #----------------------------- */
 
-    /*       
+    /*
         returns:
-          newHash - hash of the cert for this CA - we should check for this hash in 
+          newHash - hash of the cert for this CA - we should check for this hash in
           result:
             0  - certificate OK
             1  - certificate not found
@@ -430,8 +470,4 @@ contract LuxUni_PKI is owned {
         }
         return (1, _crtAddrParent, _newHash);
     }
-
-
 }
-
-

@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -252,7 +252,7 @@ func internalBlackList(w http.ResponseWriter, r *http.Request, isHashes bool) {
 
 			// Instantiate the contract, the address is taken from eth at the moment of contract initiation
 			// kyc, err := NewLuxUni_KYC(common.HexToAddress(gContractHash), backends.NewRPCBackend(conn))
-			pkiContract, err := NewLuxUni_PKI(parentAddr, client)
+			pkiContract, err := NewLuxUniPKI(parentAddr, client)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Failed to instantiate a smart contract: %v", err),
 					581 /*http.StatusInternalServerError*/)
@@ -284,7 +284,7 @@ func internalBlackList(w http.ResponseWriter, r *http.Request, isHashes bool) {
 				return
 			}
 
-			sess := &LuxUni_PKISession{
+			sess := &LuxUniPKISession{
 				Contract: pkiContract,
 				CallOpts: bind.CallOpts{
 					Pending: true,
@@ -292,7 +292,7 @@ func internalBlackList(w http.ResponseWriter, r *http.Request, isHashes bool) {
 				TransactOpts: bind.TransactOpts{
 					From:     auth.From,
 					Signer:   auth.Signer,
-					GasLimit: big.NewInt(2000000),
+					GasLimit: uint64(2000000),
 				},
 			}
 			/* sess.TransactOpts = *auth
@@ -458,7 +458,7 @@ func rstEnrollUser(w http.ResponseWriter, r *http.Request) {
 
 	// Instantiate the contract, the address is taken from eth at the moment of contract initiation
 	// kyc, err := NewLuxUni_KYC(common.HexToAddress(gContractHash), backends.NewRPCBackend(conn))
-	pkiContract, err := NewLuxUni_PKI(parentAddr, client)
+	pkiContract, err := NewLuxUniPKI(parentAddr, client)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Enroll: Failed to instantiate a smart contract: %v", err),
 			581 /*http.StatusInternalServerError*/)
@@ -501,7 +501,7 @@ func rstEnrollUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess := &LuxUni_PKISession{
+	sess := &LuxUniPKISession{
 		Contract: pkiContract,
 		CallOpts: bind.CallOpts{
 			Pending: true,
@@ -509,7 +509,7 @@ func rstEnrollUser(w http.ResponseWriter, r *http.Request) {
 		TransactOpts: bind.TransactOpts{
 			From:     auth.From,
 			Signer:   auth.Signer,
-			GasLimit: big.NewInt(2000000),
+			GasLimit: uint64(2000000),
 		},
 	}
 
@@ -640,7 +640,7 @@ func rstPopulateContract(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Instantiate the contract, the address is taken from eth at the moment of contract initiation
-	pkiContract, err := NewLuxUni_PKI(contrAddr, client)
+	pkiContract, err := NewLuxUniPKI(contrAddr, client)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Rest Populate: Failed to instantiate a smart contract: %v", err),
 			581 /*http.StatusInternalServerError*/)
@@ -674,7 +674,7 @@ func rstPopulateContract(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess := &LuxUni_PKISession{
+	sess := &LuxUniPKISession{
 		Contract: pkiContract,
 		CallOpts: bind.CallOpts{
 			Pending: true,
@@ -682,7 +682,7 @@ func rstPopulateContract(w http.ResponseWriter, r *http.Request) {
 		TransactOpts: bind.TransactOpts{
 			From:     auth.From,
 			Signer:   auth.Signer,
-			GasLimit: big.NewInt(2000000),
+			GasLimit: uint64(2000000),
 		},
 	}
 
@@ -797,7 +797,7 @@ func rstCreateContract(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pkiContr, err := NewLuxUni_PKI(common.HexToAddress(parentAddrStr), client)
+	pkiContr, err := NewLuxUniPKI(common.HexToAddress(parentAddrStr), client)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Rest Create contract: Failed to instantiate a smart contract: %v", err),
 			581 /*http.StatusInternalServerError*/)
@@ -838,8 +838,8 @@ func rstCreateContract(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var trOpts bind.TransactOpts = *auth
-	trOpts.GasLimit = big.NewInt(4000000) // 6124970 - block gas limit in Rinkeby
-	contrAddr, _ /*contr*/, _, err := DeployLuxUni_PKI(&trOpts, client)
+	trOpts.GasLimit = uint64(4000000) // 6124970 - block gas limit in Rinkeby
+	contrAddr, _ /*contr*/, _, err := DeployLuxUniPKI(&trOpts, client)
 	/*
 	   https://stackoverflow.com/questions/40096750/set-status-code-on-http-responsewriter
 	*/

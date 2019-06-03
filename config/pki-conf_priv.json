@@ -1,16 +1,16 @@
 {
-  "contractHash": "0xa422f3193fc5402702fbb5fac6bcc4cb42ccde0c",
-  "contractWebHash": "0xe6268ff92ed7b4eb08e7272ad1d49871d8befbcf",
-  "IPCpath": "/home/alex/wrk/Eth_AeroNet_t/geth.ipc",
-  "pswd": "ira",
-  "keyDir": "/home/alex/wrk/Eth_AeroNet_t/keystore/",
-  "accountAddr": "0xde9319abc7958e1939b472a811bab05f2d79f5fc",
-  "keyFile": "UTC--2017-05-05T21-05-50.307916687Z--de9319abc7958e1939b472a811bab05f2d79f5fc",
-  "privateKeyPath": "a_pr.key",
+  "contractHash": "0x5ecb80fa37ae2354d0b6115f57d2f99c5e9ed5ee",
+  "contractWebHash": "0x870d29002fe023fcdb6382afd1757f0126d30c1e",
+  "IPCpath": "/Users/ramazangirgin/ethereum/blkchain/geth.ipc",
+  "pswd": "seed",
+  "keyDir": "/Users/ramazangirgin/ethereum/blkchain/keystore/",
+  "accountAddr": "0x63e86833b4f71ddfb5f5c564e52aee434b332623",
+  "keyFile": "UTC--2019-03-19T10-39-27.983252000Z--63e86833b4f71ddfb5f5c564e52aee434b332623",
   "appHttpPort": 8081,
   "restHttpPort": 8091,
   "ethereumRpcPort": 8084,
   "appUrlServer": "http://localhost",
   "restUrlServer": "http://localhost",
-  "ethereumRpcUrl": "http://localhost"
+  "ethereumRpcUrl": "http://localhost",
+  "fileWebPath": "/home/alex/wrk/Dropbox/WORK/RD/LuxBCh/PKI_gitarch/public"
 }

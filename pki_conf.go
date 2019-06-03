@@ -18,8 +18,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto/sha3"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"golang.org/x/crypto/sha3"
 )
 
 var gConfigFile string = "./config/pki-conf.json"
@@ -101,7 +101,7 @@ func UploadFile(w http.ResponseWriter, r *http.Request, idFormStr string,
 
 	// https://stackoverflow.com/questions/36111777/golang-how-to-read-a-text-file
 	// https://stackoverflow.com/questions/30182538/why-can-not-i-copy-a-slice-with-copy-in-golang
-	hasher := sha3.NewKeccak256()
+	hasher := sha3.NewLegacyKeccak256()
 	//dst4hash, err := ioutil.ReadFile(dstFName);
 	dst4hash, err := ioutil.ReadAll(file)
 	if err != nil {
@@ -197,7 +197,7 @@ func ConfirmHashCADataLight(client *ethclient.Client, currAddr common.Address, h
 	retRevokeDate = time.Time{}
 	retCertData = nil
 
-	currContract, err := NewLuxUni_PKI(currAddr, client)
+	currContract, err := NewLuxUniPKI(currAddr, client)
 	if err != nil {
 		return -1, time.Time{}, common.Address{}, nil, nil,
 			GeneralError{fmt.Sprintf(
@@ -271,7 +271,7 @@ func ConfirmHashCADataLight(client *ethclient.Client, currAddr common.Address, h
 }
 
 func CalcHash(data []byte) ([]byte, error) {
-	hasher := sha3.NewKeccak256()
+	hasher := sha3.NewLegacyKeccak256()
 	hasher.Write(data)
 	return hasher.Sum(nil), nil
 }
