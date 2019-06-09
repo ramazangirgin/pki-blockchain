@@ -171,6 +171,7 @@ func main() {
 	r.HandleFunc("/validate_cert", ValidateCert)
 	r.HandleFunc("/download_cacert", DownloadCaCert)
 	r.HandleFunc("/generate_user_cert", GenerateUserCert)
+	r.HandleFunc("/generate_batch_user_cert_and_import", GenerateUserCert)
 
 	fs := http.FileServer(http.Dir(gConfig.FileWebPath))
 	spref := http.StripPrefix("/public/", fs)
@@ -1436,6 +1437,16 @@ func GenerateUserCert(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", "attachment; filename="+strName+".crt.out")
 	w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
 	http.ServeContent(w, r, strName+".crt.out", time.Now(), bytes.NewReader(dataCert))
+}
+
+func CreateUserCertificate(w http.ResponseWriter, strName string, insertAddr common.Address) (([]byte) ) {
+
+	dataCert, err := GenerateCert(common.Address{}, insertAddr, false, strName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+	return dataCert
 }
 
 /*

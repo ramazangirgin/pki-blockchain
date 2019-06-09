@@ -24,12 +24,16 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gorilla/mux"
-	//"math/rand"
+	"math/rand"
 )
+
+const BATCH_CERTIFICATE_HASH_INSERT_COUNT = 900
+
 
 func init() {
 
 }
+
 
 /*
 the only command lne parameter:
@@ -67,7 +71,8 @@ func main() {
 	// subrouter - http://stackoverflow.com/questions/18720526/how-does-pathprefix-work-in-gorilla-mux-library-for-go
 	r := mux.NewRouter()
 	//r.HandleFunc("/pki-test", PkiForm);
-	r.HandleFunc("/enroll_user", rstEnrollUser)
+	//r.HandleFunc("/enroll_user", rstEnrollUser)
+	r.HandleFunc("/enroll_user", rstBatchEnrollUser)
 	r.HandleFunc("/blacklist_user", rstBlacklistUser) // uses UserID as a paramenter
 	r.HandleFunc("/blacklist_hash", rstBlacklistHash) // uses Cetificate Hash as a parameter
 	//r.HandleFunc("/enroll_ca", EnrollCA);
@@ -548,6 +553,236 @@ func rstEnrollUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("EnrollUser: Retreived result does not correspond to Number of RegData",
 			err), 580) //*http.StatusInternalServerError
 		return
+	}
+
+	// UplFile is id in the input "file" component of the form
+	// http://stackoverflow.com/questions/33771167/handle-file-uploading-with-go
+	// file, handler, err := r.FormFile("UplFile")
+	//out, err := os.Create("/tmp/tst_"+handler.Filename);
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(strconv.Itoa(int(result))))
+}
+func rstBatchEnrollUser(w http.ResponseWriter, r *http.Request) {
+	var parentAddr common.Address = common.Address{}  // this is addr of the contract which is going to hold the hash
+	var curUserAddr common.Address = common.Address{} // !! this is the user_id of the owner of parent contr
+	var isNoUpload bool = false
+
+	err := r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		fmt.Printf("EnrollUser: No change data -- ", err.Error())
+		http.Error(w, GeneralError{fmt.Sprintf(
+			"EnrollUser: No change data -- ", err.Error())}.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+	hashSum, _ /*fileName*/, dataCert, cerr :=
+		UploadFile(w, r, "UplFiles", true)
+	if cerr.errCode != 0 {
+		if cerr.errCode == 1 {
+			isNoUpload = true
+			hashArr := r.MultipartForm.Value["Hash"]
+			if len(hashArr) == 0 {
+				http.Error(w, GeneralError{fmt.Sprintf(
+					"EnrollUser: No hashes in request")}.Error(),
+					480 /* http.StatusInternalServerError */)
+				return
+			}
+
+			hashStr := hashArr[0]
+			if (hashStr[0:2] == "0x") || (hashStr[0:2] == "0X") {
+				hashStr = hashStr[2:]
+			}
+			hashInt := big.NewInt(0)
+			hashInt, _ = hashInt.SetString(hashStr, 16) /* tmpInt, err := strconv.Atoi(hashArr[0]); */
+			if hashInt == nil {
+				http.Error(w, fmt.Sprintf("EnrollUser: Hash string %s is incorrect", hashArr[0]),
+					480 /*http.StatusInternalServerError*/)
+				return
+			}
+			hashSum = hashInt.Bytes()
+		} else {
+			http.Error(w, GeneralError{fmt.Sprintf(
+				"EnrollUser UplFiles:", cerr.Error())}.Error(),
+				482 /*http.StatusInternalServerError*/)
+			return
+		}
+	}
+
+	strParentAddrArr := r.MultipartForm.Value["ParentAddr"]
+	if len(strParentAddrArr) > 0 {
+		if common.IsHexAddress(strParentAddrArr[0]) == false {
+			http.Error(w, fmt.Sprintf("Parent address as a parameter is incorrect: %v",
+				strParentAddrArr[0]),
+				484 /*http.StatusInternalServerError*/)
+			return
+		}
+		parentAddr = common.HexToAddress(strParentAddrArr[0])
+	}
+
+	if isNoUpload == false {
+		var caContrAddr, insertAddr common.Address
+		caContrAddr, insertAddr, _ /*desc*/, err = ParseCert(dataCert)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("CERTIFICATE: Parsing error: %v", err),
+				482 /*http.StatusInternalServerError*/)
+			return
+		}
+		if (insertAddr == common.Address{}) {
+			http.Error(w, "CERTIFICATE: No Parent Address is provided in the Cert",
+				482 /*http.StatusInternalServerError*/)
+			return
+		}
+		if (caContrAddr != common.Address{}) {
+			http.Error(w, "CERTIFICATE: Non-CA certificates should not include non-zero CA contract address",
+				482 /*http.StatusInternalServerError*/)
+			return
+		}
+		if insertAddr != parentAddr {
+			http.Error(w, "Address in the certificate does not correspond to the contract address of the Authority (CA)",
+				482 /*http.StatusInternalServerError*/)
+			return
+		}
+	}
+
+	strUserAddrArr := r.MultipartForm.Value["CurrentUserAddr"]
+	if len(strUserAddrArr) > 0 {
+		if common.IsHexAddress(strUserAddrArr[0]) == false {
+			http.Error(w, GeneralError{"CurrentUser address is incorrect"}.Error(),
+				485 /*http.StatusInternalServerError*/)
+			return
+		}
+		curUserAddr = common.HexToAddress(strUserAddrArr[0])
+	}
+
+	if (parentAddr == common.Address{}) {
+		http.Error(w, GeneralError{"Enroll: Parent address is not established"}.Error(),
+			484 /*http.StatusInternalServerError*/)
+		return
+	}
+
+	indHashFound, _ /*revokeDate*/, _ /*superParentAddr*/, _ /*retCaHash []byte*/, _ /*retCertData []byte*/, err :=
+		ConfirmHashCAData(parentAddr, hashSum, false /*isGetCaCertData*/)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Confirm hash error: %v", err.Error()),
+			480 /*http.StatusInternalServerError*/)
+		return
+	}
+	if indHashFound != -1 {
+		http.Error(w, fmt.Sprintf("Enroll: certificate already exists, hash: %x", hashSum),
+			481 /*http.StatusInternalServerError*/)
+		return
+	}
+
+	result := -1
+	for i := 0; i < BATCH_CERTIFICATE_HASH_INSERT_COUNT; i++ {
+		randomBytes := make([]byte, len(hashSum))
+		rand.Read(randomBytes)
+		hashSum = randomBytes
+		fmt.Printf("DEBUG: Adding Certificate to blockchain. Iteration: %s, HashSum: %s\n", i, hashSum)
+		client, err := ethclient.Dial(gConfig.IPCpath)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Enroll: Failed to connect to the Ethereum client: %v", err),
+				581 /*http.StatusInternalServerError*/)
+			return
+		}
+
+		// Instantiate the contract, the address is taken from eth at the moment of contract initiation
+		// kyc, err := NewLuxUni_KYC(common.HexToAddress(gContractHash), backends.NewRPCBackend(conn))
+		pkiContract, err := NewLuxUniPKI(parentAddr, client)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Enroll: Failed to instantiate a smart contract: %v", err),
+				581 /*http.StatusInternalServerError*/)
+			return
+		}
+
+		callOpts := &bind.CallOpts{
+			Pending: true,
+		}
+		initNumRegData, err := pkiContract.GetNumRegData(callOpts)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("EnrollUser: Failed to get numRegData from blockchain: %v. ", err),
+				580 /*http.StatusInternalServerError*/)
+			return
+		}
+
+		// Logging into Ethereum as a user
+		if (curUserAddr == common.Address{}) {
+			fmt.Printf("Attention! Enroll: user address is zero, default config account is used\n")
+			curUserAddr = common.HexToAddress(gConfig.AccountAddr)
+		}
+		keyFile, err := FindKeyFile(curUserAddr)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to find key file for account %v. %v ",
+				curUserAddr.String(), err), 581 /*http.StatusInternalServerError*/)
+			return
+		}
+		key, err := ioutil.ReadFile(gConfig.KeyDir + keyFile)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Enroll: Ethereum connect -- Key File error: %v\n", err),
+				581 /*http.StatusInternalServerError*/)
+			return
+		}
+		//fmt.Printf("DEBUG: Found Ethereum Key File \n")
+
+		auth, err := bind.NewTransactor(strings.NewReader(string(key)), gConfig.Pswd)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Enroll: Failed to create authorized transactor: %v", err),
+				581 /*http.StatusInternalServerError*/)
+			return
+		}
+
+		sess := &LuxUniPKISession{
+			Contract: pkiContract,
+			CallOpts: bind.CallOpts{
+				Pending: true,
+			},
+			TransactOpts: bind.TransactOpts{
+				From:     auth.From,
+				Signer:   auth.Signer,
+				GasLimit: uint64(2000000),
+			},
+		}
+
+		var tmpHash [32]byte
+		copy(tmpHash[:], hashSum)
+		res, err := sess.NewRegDatum(tmpHash, []byte("")) /* contrAddr, fileName, desc, "", newUserAddr */
+		if err != nil {
+			http.Error(w, fmt.Sprintf("EnrollUser: Failed to add a record to blockchain: %v. ", err),
+				580 /*http.StatusInternalServerError*/)
+			return
+		}
+
+		finalNumRegData, err := pkiContract.GetNumRegData(callOpts)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("EnrollUser: Failed to get numRegData from blockchain: %v. ", err),
+				580 /*http.StatusInternalServerError*/)
+			return
+		}
+
+		if finalNumRegData.Int64() != initNumRegData.Int64()+1 {
+			fmt.Sprintf("EnrollUser: Failed to add a record, wrong function return: %х", res.Data())
+			//http.Error(w, , 580) //*http.StatusInternalServerError
+			//return
+		}
+
+		/*!!!!!*/ // var result uint64 = uint64(finalNumRegData.Int64() - 1)
+		result, err := GetEventReturn(tmpHash, parentAddr)
+		if err != nil {
+			fmt.Sprintf("EnrollUser: Failed to retreive result: %v",
+				err)
+			//http.Error(w, , 580) //*http.StatusInternalServerError
+			//return
+		}
+		/*!!!!!*/ //result = uint64(finalNumRegData.Int64() - 1)
+
+		if result != uint64(finalNumRegData.Int64()-1) {
+			fmt.Sprintf("EnrollUser: Retreived result does not correspond to Number of RegData",
+				err)
+			//http.Error(w, , 580) //*http.StatusInternalServerError
+			//return
+		}
 	}
 
 	// UplFile is id in the input "file" component of the form
