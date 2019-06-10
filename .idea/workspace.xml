@@ -2,17 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9ba594ad-5247-449c-a399-fa985df9fa2e" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/proofs/1-certificate-data-chain.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/proofs/2-certificates-data-chain.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compile_all.sh" beforeDir="false" afterPath="$PROJECT_DIR$/compile_all.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/pki-conf.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/pki-conf.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/pki-conf_priv.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/pki-conf_priv.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/local_boot.sh" beforeDir="false" afterPath="$PROJECT_DIR$/local_boot.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pki-rest" beforeDir="false" afterPath="$PROJECT_DIR$/pki-rest" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pki-rest.go" beforeDir="false" afterPath="$PROJECT_DIR$/pki-rest.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pki-web" beforeDir="false" afterPath="$PROJECT_DIR$/pki-web" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pki-web.go" beforeDir="false" afterPath="$PROJECT_DIR$/pki-web.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -59,7 +49,7 @@
           <provider selected="true" editor-type-id="text-editor" />
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pki-rest.go">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="60">
@@ -68,22 +58,22 @@
           </provider>
         </entry>
       </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/proofs/1000-certificates-data-chain.txt">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/proofs/2-certificates-data-chain.txt">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="182">
-              <caret line="102" column="12" lean-forward="true" selection-start-line="102" selection-start-column="12" selection-end-line="102" selection-end-column="12" />
+              <caret line="102" column="12" selection-start-line="102" selection-start-column="12" selection-end-line="102" selection-end-column="12" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/local_boot.sh">
-          <provider selected="true" editor-type-id="text-editor" />
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/bind_pki.go">
           <provider selected="true" editor-type-id="text-editor" />
         </entry>
       </file>
@@ -179,7 +169,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1280" height="719" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info id="Favorites" side_tool="true" />
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24959612" />
@@ -187,7 +176,7 @@
       <window_info anchor="bottom" id="Docker" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" />
       <window_info anchor="bottom" id="Version Control" />
-      <window_info anchor="bottom" id="Terminal" />
+      <window_info anchor="bottom" id="Terminal" visible="true" weight="0.32854864" />
       <window_info anchor="bottom" id="Event Log" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
@@ -249,7 +238,7 @@
     <entry file="file://$PROJECT_DIR$/proofs/2-certificates-data-chain.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="182">
-          <caret line="102" column="12" lean-forward="true" selection-start-line="102" selection-start-column="12" selection-end-line="102" selection-end-column="12" />
+          <caret line="102" column="12" selection-start-line="102" selection-start-column="12" selection-end-line="102" selection-end-column="12" />
         </state>
       </provider>
     </entry>
