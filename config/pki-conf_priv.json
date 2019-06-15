@@ -1,6 +1,6 @@
 {
-  "contractHash": "0x5e54b30753cf45bcf4a0026171ad06b9d974c67f",
-  "contractWebHash": "0xc20db7786a4c6432ad71ac1d69acd12976ebf4c3",
+  "contractHash": "0x327c9fcc0b42a388aad14e21ac6f5092bace090a",
+  "contractWebHash": "0xcf0b0ea41eded636ce32383555c2abfa0d1d914e",
   "IPCpath": "/Users/ramazangirgin/ethereum/blkchain/geth.ipc",
   "pswd": "seed",
   "keyDir": "/Users/ramazangirgin/ethereum/blkchain/keystore/",

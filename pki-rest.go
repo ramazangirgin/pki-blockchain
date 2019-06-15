@@ -27,13 +27,11 @@ import (
 	"math/rand"
 )
 
-const BATCH_CERTIFICATE_HASH_INSERT_COUNT = 900
-
+const BATCH_CERTIFICATE_HASH_INSERT_COUNT = 9401
 
 func init() {
 
 }
-
 
 /*
 the only command lne parameter:
@@ -675,75 +673,76 @@ func rstBatchEnrollUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	client, err := ethclient.Dial(gConfig.IPCpath)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Enroll: Failed to connect to the Ethereum client: %v", err),
+			581 /*http.StatusInternalServerError*/)
+		return
+	}
+
+	// Instantiate the contract, the address is taken from eth at the moment of contract initiation
+	// kyc, err := NewLuxUni_KYC(common.HexToAddress(gContractHash), backends.NewRPCBackend(conn))
+	pkiContract, err := NewLuxUniPKI(parentAddr, client)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Enroll: Failed to instantiate a smart contract: %v", err),
+			581 /*http.StatusInternalServerError*/)
+		return
+	}
+
+	callOpts := &bind.CallOpts{
+		Pending: true,
+	}
+	initNumRegData, err := pkiContract.GetNumRegData(callOpts)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("EnrollUser: Failed to get numRegData from blockchain: %v. ", err),
+			580 /*http.StatusInternalServerError*/)
+		return
+	}
+
+	// Logging into Ethereum as a user
+	if (curUserAddr == common.Address{}) {
+		fmt.Printf("Attention! Enroll: user address is zero, default config account is used\n")
+		curUserAddr = common.HexToAddress(gConfig.AccountAddr)
+	}
+	keyFile, err := FindKeyFile(curUserAddr)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to find key file for account %v. %v ",
+			curUserAddr.String(), err), 581 /*http.StatusInternalServerError*/)
+		return
+	}
+	key, err := ioutil.ReadFile(gConfig.KeyDir + keyFile)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Enroll: Ethereum connect -- Key File error: %v\n", err),
+			581 /*http.StatusInternalServerError*/)
+		return
+	}
+	//fmt.Printf("DEBUG: Found Ethereum Key File \n")
+
+	auth, err := bind.NewTransactor(strings.NewReader(string(key)), gConfig.Pswd)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Enroll: Failed to create authorized transactor: %v", err),
+			581 /*http.StatusInternalServerError*/)
+		return
+	}
+
+	sess := &LuxUniPKISession{
+		Contract: pkiContract,
+		CallOpts: bind.CallOpts{
+			Pending: true,
+		},
+		TransactOpts: bind.TransactOpts{
+			From:     auth.From,
+			Signer:   auth.Signer,
+			GasLimit: uint64(2000000),
+		},
+	}
+
 	result := -1
 	for i := 0; i < BATCH_CERTIFICATE_HASH_INSERT_COUNT; i++ {
 		randomBytes := make([]byte, len(hashSum))
 		rand.Read(randomBytes)
 		hashSum = randomBytes
 		fmt.Printf("DEBUG: Adding Certificate to blockchain. Iteration: %s, HashSum: %s\n", i, hashSum)
-		client, err := ethclient.Dial(gConfig.IPCpath)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Enroll: Failed to connect to the Ethereum client: %v", err),
-				581 /*http.StatusInternalServerError*/)
-			return
-		}
-
-		// Instantiate the contract, the address is taken from eth at the moment of contract initiation
-		// kyc, err := NewLuxUni_KYC(common.HexToAddress(gContractHash), backends.NewRPCBackend(conn))
-		pkiContract, err := NewLuxUniPKI(parentAddr, client)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Enroll: Failed to instantiate a smart contract: %v", err),
-				581 /*http.StatusInternalServerError*/)
-			return
-		}
-
-		callOpts := &bind.CallOpts{
-			Pending: true,
-		}
-		initNumRegData, err := pkiContract.GetNumRegData(callOpts)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("EnrollUser: Failed to get numRegData from blockchain: %v. ", err),
-				580 /*http.StatusInternalServerError*/)
-			return
-		}
-
-		// Logging into Ethereum as a user
-		if (curUserAddr == common.Address{}) {
-			fmt.Printf("Attention! Enroll: user address is zero, default config account is used\n")
-			curUserAddr = common.HexToAddress(gConfig.AccountAddr)
-		}
-		keyFile, err := FindKeyFile(curUserAddr)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to find key file for account %v. %v ",
-				curUserAddr.String(), err), 581 /*http.StatusInternalServerError*/)
-			return
-		}
-		key, err := ioutil.ReadFile(gConfig.KeyDir + keyFile)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Enroll: Ethereum connect -- Key File error: %v\n", err),
-				581 /*http.StatusInternalServerError*/)
-			return
-		}
-		//fmt.Printf("DEBUG: Found Ethereum Key File \n")
-
-		auth, err := bind.NewTransactor(strings.NewReader(string(key)), gConfig.Pswd)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Enroll: Failed to create authorized transactor: %v", err),
-				581 /*http.StatusInternalServerError*/)
-			return
-		}
-
-		sess := &LuxUniPKISession{
-			Contract: pkiContract,
-			CallOpts: bind.CallOpts{
-				Pending: true,
-			},
-			TransactOpts: bind.TransactOpts{
-				From:     auth.From,
-				Signer:   auth.Signer,
-				GasLimit: uint64(2000000),
-			},
-		}
 
 		var tmpHash [32]byte
 		copy(tmpHash[:], hashSum)
